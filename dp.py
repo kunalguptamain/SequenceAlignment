@@ -140,10 +140,76 @@ def semi_global_alignment(sequence_1: str, sequence_2: str, gap:int, substitutio
 
 ############################################################################
 
+def local_alignment(sequence_1: str, sequence_2: str, gap:int, substitution_matrix):
+    #setting gameboard
+    game_board = [[0] * (len(sequence_2) + 1)]
+    for i in range(len(sequence_1)):
+        row_i = [0]
+        for j in range(len(sequence_2)):
+            row_i.append(substitution_matrix[sequence_1[i]][sequence_2[j]])
+        game_board.append(row_i)
+
+    #print_2d_array(game_board)
+
+    #choosing best path
+    dynamic_cost_array = []
+    for i in range(len(sequence_1)):
+        row_i = []
+        for j in range(len(sequence_2)):
+            appender = 0
+            if i == 0 and j == 0: 
+                appender = 0
+            elif i == 0:
+                appender = max(row_i[j - 1] - gap, appender)
+            elif j == 0:
+                appender = max(dynamic_cost_array[i - 1][j] - gap, appender)
+            else:
+                appender = max(row_i[j - 1] - gap, dynamic_cost_array[i - 1][j] - gap, \
+                                dynamic_cost_array[i - 1][j - 1] + game_board[i][j], appender)
+            row_i.append(appender)
+        dynamic_cost_array.append(row_i)
+
+    #print(dynamic_cost_array)
+
+    #backtracking
+    row = len(sequence_1) - 1
+    col = len(sequence_2) - 1
+
+    for i in range(len(sequence_1)):
+        for j in range(len(sequence_2)):
+            if dynamic_cost_array[i][j] > dynamic_cost_array[row][col]:
+                row = i
+                col = j
+
+    aligned_sequence_1 = sequence_1[row]
+    aligned_sequence_2 = sequence_2[col]
+    while  dynamic_cost_array[row][col] != 0:
+        if row != 0 and dynamic_cost_array[row - 1][col] - dynamic_cost_array[row][col] == gap:
+            aligned_sequence_1 += sequence_1[row - 1]
+            aligned_sequence_2 += "-"
+            row -= 1
+        elif col != 0 and dynamic_cost_array[row][col - 1] - dynamic_cost_array[row][col] == gap:
+            aligned_sequence_1 += "-"
+            aligned_sequence_2 += sequence_2[col- 1]
+            col -= 1
+        else:
+            aligned_sequence_1 += sequence_1[row - 1]
+            aligned_sequence_2 += sequence_2[col - 1]
+            row -= 1
+            col -= 1
+    return aligned_sequence_1[::-1], aligned_sequence_2[::-1]
+
 global_sequences = global_alignment(SEQUENCE_1_TEST, SEQUENCE_2_TEST, GAP, SUBSTITUTION_MATRIX)
 print(global_sequences[0])
 print(global_sequences[1])
+print("-------------------------------")
 
 semi_global_sequences = semi_global_alignment(SEQUENCE_1_TEST, SEQUENCE_2_TEST, GAP, SUBSTITUTION_MATRIX)
 print(semi_global_sequences[0])
 print(semi_global_sequences[1])
+print("-------------------------------")
+
+local_sequences = local_alignment(SEQUENCE_1_TEST, SEQUENCE_2_TEST, GAP, SUBSTITUTION_MATRIX)
+print(local_sequences[0])
+print(local_sequences[1])
+print("-------------------------------")
